@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PL Conviction Board</title>
+<meta name="description" content="Every live Premier League Conviction market on XO Market, with odds, expiry countdowns, creators and a live trades feed. Unofficial fan-built dashboard, not affiliated with XO Market.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23ff87a6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='800' font-size='16' text-anchor='middle' fill='%237a1230'%3EPL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Rubik:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff; --soft:#f5f5f6; --raised:#fff; --control:#fff; --chip:#f1f1f3;
+  --line:#e6e8ea; --line-input:#c9cbd0; --line-hover:#9a9ca3; --black:#000;
+  --ink:#000; --ink2:#4d4e55; --ink3:#6b6c75;
+  --yes:#ff87a6; --yes-deep:#d42a5d; --yes-soft:#ffe3ea; --yes-wash:#fff4f7;
+  --no:#a293ff; --no-deep:#6a3ff0; --no-soft:#e9e5ff;
+  --green:#12924f; --green-soft:#d3f8dd;
+  --red:#c0403d; --red-soft:#ffe3e1;
+  --amber:#8a5200; --amber-soft:#fff3cf; --amber-line:#e9c46a;
+  --shadow:2px 2px 0 #000;
+  --radius:12px;
+  --head:"Rubik",ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;position:relative;background:var(--bg);color:var(--ink);font-family:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1420px;margin:0 auto;padding:0 20px}
+/* faint grid backdrop, like XO's landing page */
+body::before{content:"";position:absolute;inset:0 0 auto 0;height:420px;pointer-events:none;z-index:-1;
+  background-image:linear-gradient(rgba(0,0,0,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.055) 1px,transparent 1px);background-size:56px 56px;
+  -webkit-mask-image:linear-gradient(#000 20%,transparent);mask-image:linear-gradient(#000 20%,transparent)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:6px;padding:8px 14px;font-weight:700;cursor:pointer;background:#fff;border:1px solid var(--black);box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s,background .15s}
+.btn:hover{background:var(--soft)}
+.btn:active{transform:translate(2px,2px);box-shadow:0 0 0 #000}
+.btn.pink{background:var(--yes);color:#000;font-family:var(--head);font-weight:800}
+.btn.pink:hover{background:#ff9bb5}
+.btn[aria-expanded="true"]{background:var(--yes-soft)}
+.btn .badge{display:inline-grid;place-items:center;min-width:19px;height:19px;border-radius:99px;background:#000;color:#fff;font-size:11.5px;font-weight:700;padding:0 5px}
+.btn .badge[hidden]{display:none}
+.btn:focus-visible,.card a:focus-visible,.feed a:focus-visible,input:focus-visible,select:focus-visible,.chip:focus-visible,.dc:focus-visible{outline:3px solid var(--yes);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:14px;height:58px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--head);font-weight:800;letter-spacing:-.01em;font-size:18px}
+.brand .mark{width:30px;height:30px;border-radius:7px;background:var(--yes);color:#000;border:1px solid #000;box-shadow:var(--shadow);display:grid;place-items:center;font-size:13px;font-weight:800}
+.brand small{font-family:"Figtree",sans-serif;font-weight:700;color:var(--ink2);font-size:11.5px;border:1px solid var(--line-input);border-radius:5px;padding:1px 6px;margin-left:2px;text-transform:uppercase;letter-spacing:.04em}
+.spacer{flex:1}
+.live{display:flex;align-items:center;gap:8px;color:var(--ink2);font-size:13px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(18,146,79,.5);animation:pulse 2s infinite;flex:none}
+.live.err .dot{background:var(--red);animation:none}
+.live.busy .dot{background:var(--no);animation:none}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(18,146,79,0)}100%{box-shadow:0 0 0 0 rgba(18,146,79,0)}}
+.meter{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--yes);transition:width 1s linear}
+
+.disclaimer{background:var(--yes-wash);border-bottom:1px solid var(--yes-soft);color:var(--ink2);font-size:12.5px}
+.disclaimer .wrap{padding-top:6px;padding-bottom:6px}
+.disclaimer b{color:#000;font-weight:700}
+.disclaimer a{color:var(--yes-deep);text-decoration:underline;text-underline-offset:2px;font-weight:600}
+
+/* ---------- referral strip ---------- */
+.refer{margin:16px 0 0;border:1px solid #000;border-radius:var(--radius);background:var(--yes);box-shadow:3px 3px 0 #000;padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 20px;align-items:center}
+.refer[hidden]{display:none}
+.refer .txt{font-size:15.5px;line-height:1.35}
+.refer .txt b{font-family:var(--head);font-weight:800}
+.refer .act{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.refer .code{font-size:13px;display:flex;align-items:center;gap:6px;color:#3a0a1a}
+.refer .code b{color:#000;font-weight:800}
+.refer .code button{background:#fff;border:1px solid #000;border-radius:5px;padding:2px 8px;font-weight:700;font-size:12px;cursor:pointer}
+.refer .code button:hover{background:var(--yes-soft)}
+.refer .btn.pink{background:#fff}
+.refer .btn.pink:hover{background:var(--yes-wash)}
+.refer .disc{grid-column:1/-1;margin:0;font-size:11.5px;color:#3a0a1a;opacity:.85}
+
+/* ---------- heading + KPIs ---------- */
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px;padding:20px 0 14px}
+h1{margin:0;font-family:var(--head);font-size:clamp(26px,3.8vw,40px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
+h1 em{font-style:normal;background:linear-gradient(transparent 58%,var(--yes) 58%);padding:0 3px}
+.sub{margin:6px 0 0;color:var(--ink2);font-size:14.5px}
+.kpis{display:flex;flex-wrap:wrap;gap:8px}
+.kpi{display:flex;align-items:baseline;gap:7px;background:#fff;border:1px solid var(--line-input);border-radius:8px;padding:6px 11px;font-size:13px;color:var(--ink2)}
+.kpi b{font-family:var(--head);font-size:17px;font-weight:800;color:#000;font-variant-numeric:tabular-nums}
+.kpi.soon b{color:var(--amber)}
+.kpi.tbq{background:var(--yes-soft);border-color:#000}
+.kpi.tbq b{color:var(--yes-deep)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.field{position:relative;flex:1 1 260px;min-width:0}
+.field svg{position:absolute;left:12px;top:50%;translate:0 -50%;color:var(--ink3);pointer-events:none}
+.field input{width:100%;background:#fff;border:1px solid var(--line-input);border-radius:6px;padding:9px 12px 9px 36px;height:40px}
+.field input::placeholder{color:var(--ink3)}
+select{-webkit-appearance:none;appearance:none;height:40px;max-width:100%;padding:0 36px 0 13px;border:1px solid #000;border-radius:6px;box-shadow:var(--shadow);cursor:pointer;font-weight:600;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center/12px 8px;
+  transition:background-color .15s,transform .08s,box-shadow .08s}
+select:hover{background-color:var(--soft)}
+select:active{transform:translate(2px,2px);box-shadow:0 0 0 #000}
+.toolbar .btn{height:40px}
+.panel{background:var(--soft);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
+.panel[hidden]{display:none}
+.panel .grp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.panel .lbl{color:var(--ink2);font-size:13px;font-weight:600}
+.toggle{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line-input);border-radius:6px;padding:0 12px;height:40px;cursor:pointer;user-select:none;color:var(--ink2)}
+.toggle input{accent-color:var(--yes-deep);margin:0}
+.toggle:has(input:checked){border-color:#000;color:#000;background:var(--yes-soft)}
+
+/* calendar call-out: cartoon arrow (wide screens) + pulsing dot on the button (everywhere) */
+.calwrap{position:relative;display:flex;align-items:center;gap:6px}
+.callout{display:none;align-items:center;gap:2px;pointer-events:none;color:var(--yes-deep);font-family:var(--head);font-weight:800;font-size:14px;line-height:1.05;letter-spacing:-.01em;transform:rotate(-5deg) skewX(-7deg);animation:point 1.4s ease-in-out infinite}
+.callout[hidden]{display:none!important}
+.callout span{max-width:104px;text-align:right;text-shadow:1px 1px 0 #fff}
+.callout svg{width:76px;height:38px;flex:none;overflow:visible;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.18))}
+@keyframes point{0%,100%{translate:0 0}50%{translate:7px 2px}}
+.btn.attn{position:relative}
+.btn.attn::after{content:"";position:absolute;top:-6px;right:-6px;width:13px;height:13px;border-radius:50%;background:var(--yes);border:2px solid #000;animation:ping 1.6s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,135,166,.9)}80%,100%{box-shadow:0 0 0 12px rgba(255,135,166,0)}}
+@media (min-width:1000px){.callout{display:flex}}
+
+/* category chips: one scrollable row */
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding:3px 3px 10px;margin:0 -3px;scrollbar-width:thin}
+.chip{flex:none;border:1px solid var(--line-input);background:#fff;color:var(--ink);border-radius:99px;padding:6px 13px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.12s;white-space:nowrap}
+.chip:hover{border-color:#000;background:var(--soft)}
+.chip[aria-pressed="true"]{background:var(--yes);border-color:#000;color:#000;box-shadow:var(--shadow);font-weight:700}
+.chip .n{opacity:.6;font-weight:600;margin-left:6px;font-variant-numeric:tabular-nums}
+
+.activebar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;margin:0 0 10px;padding:8px 12px;border:1px dashed #000;border-radius:8px;background:var(--yes-wash);font-size:14px}
+.activebar[hidden]{display:none}
+.activebar b{font-weight:700}
+.btn.clear{height:34px;padding:0 12px;background:#fff;color:var(--yes-deep);font-size:13.5px}
+
+/* ---------- layout: markets + live feed ---------- */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:22px;align-items:start}
+.section{margin:6px 0 8px}
+.section.rest{margin-top:22px}
+.section.rest:first-child{margin-top:6px}
+.section-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.section-h h2{margin:0;font-family:var(--head);font-size:19px;font-weight:800;letter-spacing:-.015em}
+.section-h .count{color:var(--ink3);font-weight:600;font-size:14px}
+.section-h .av{width:28px;height:28px}
+.section.pinned .section-h h2{color:var(--yes-deep)}
+.pin-note{color:var(--ink3);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+
+/* ---------- card ---------- */
+.card{position:relative;display:flex;flex-direction:column;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;transition:border-color .12s,box-shadow .12s,transform .12s}
+.card:hover{border-color:#000;box-shadow:3px 3px 0 #000;transform:translate(-1px,-1px)}
+.card.pin{border-color:#000;background:var(--yes-wash);box-shadow:3px 3px 0 var(--yes)}
+.card.pin:hover{box-shadow:4px 4px 0 var(--yes)}
+.card .top{display:flex;gap:12px;align-items:flex-start}
+.thumb{flex:none;width:48px;height:48px;border-radius:10px;background:var(--chip) center/cover no-repeat;border:1px solid var(--line)}
+.title{margin:0;font-size:15.5px;line-height:1.3;font-weight:700;letter-spacing:-.005em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.title a:hover{color:var(--yes-deep)}
+.by{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:13px;color:var(--ink3);min-width:0;flex-wrap:wrap}
+.by a{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;min-width:0}
+.by a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.by a:hover{color:var(--yes-deep)}
+.av{width:20px;height:20px;border-radius:50%;background:var(--chip);object-fit:cover;flex:none}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:2px}
+.tag.new{background:var(--green-soft);color:var(--green)}
+.tag.tbq{background:var(--yes);color:#000;border:1px solid #000;margin:0}
+.tag.team{background:var(--chip);color:var(--ink2);margin:0;text-transform:none;letter-spacing:0;font-weight:600}
+.tag.cat{background:#fff;color:var(--ink2);box-shadow:inset 0 0 0 1px var(--line-input);margin:0;text-transform:none;letter-spacing:0;font-weight:600}
+.odds{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.big{font-family:var(--head);font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;color:var(--yes-deep)}
+.big small{font-family:"Figtree",sans-serif;font-size:13px;font-weight:600;letter-spacing:0;color:var(--ink3);margin-left:6px}
+.delta{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--green)} .delta.down{color:var(--red)}
+.bar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--chip);gap:2px;border:1px solid #000}
+.bar i{display:block;transition:width .6s ease}
+.bar .y{background:var(--yes)} .bar .n{background:var(--no)}
+
+/* expiry countdown */
+.expiry{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 10px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.expiry .lbl{color:var(--ink2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+.expiry .cd{justify-self:end;font-family:var(--head);font-size:17px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.expiry .when{grid-column:1/-1;display:flex;justify-content:space-between;color:var(--ink3);font-size:12px}
+.life{grid-column:1/-1;height:4px;border-radius:4px;background:#dedfe3;overflow:hidden;margin-top:4px}
+.life i{display:block;height:100%;background:#000;border-radius:4px}
+.expiry.soon{border-color:var(--amber-line);background:var(--amber-soft)} .expiry.soon .cd{color:var(--amber)} .expiry.soon .life i{background:var(--amber)}
+.expiry.urgent{border-color:#e08683;background:var(--red-soft)} .expiry.urgent .cd{color:var(--red)} .expiry.urgent .life i{background:var(--red)}
+.expiry.urgent .lbl svg{animation:blink 1.2s steps(2) infinite}
+.expiry.over .cd{color:var(--ink2);font-size:14px}
+@keyframes blink{50%{opacity:.25}}
+
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--ink3);font-size:13px}
+.meta b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.desc{margin:0;color:var(--ink2);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.trade{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}
+.side{display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:6px;padding:10px 12px;font-family:var(--head);font-weight:800;min-width:0;color:#000;border:1px solid #000;box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s,filter .15s}
+.side span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side em{font-style:normal;font-variant-numeric:tabular-nums;font-weight:700}
+.side.y{background:var(--yes)} .side.n{background:var(--no)}
+.side:hover{filter:brightness(1.06)} .side:active{transform:translate(2px,2px);box-shadow:0 0 0 #000}
+.ext{font-size:12.5px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:5px;justify-content:center}
+.ext:hover{color:var(--yes-deep)}
+.card.flash{animation:flash 2.2s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--green)}100%{box-shadow:0 0 0 3px transparent}}
+
+/* ---------- live trades panel ---------- */
+.feed{position:sticky;top:74px;margin-top:6px;background:#fff;border:1px solid #000;box-shadow:3px 3px 0 #000;border-radius:var(--radius);display:flex;flex-direction:column;max-height:calc(100vh - 92px);min-height:320px;overflow:hidden}
+.feed-h{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;background:var(--yes)}
+.feed-h h2{margin:0;font-family:var(--head);font-size:17px;font-weight:800;letter-spacing:-.01em}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 9px;font-size:12px;font-weight:700;background:#fff;color:var(--green);border:1px solid #000}
+.pill.poll{color:var(--no-deep)}
+.pill.off{color:var(--ink3)}
+.pill.off .dot,.pill.poll .dot{animation:none;background:currentColor}
+.feed-tools{padding:10px 16px;display:flex;gap:8px;border-bottom:1px solid var(--line)}
+.feed-tools .toggle{height:32px;font-size:13px}
+.feed-list{list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;flex:1}
+.ti{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 16px;border-bottom:1px solid var(--line)}
+.ti:last-child{border-bottom:0}
+.ti.pin{background:var(--yes-wash);box-shadow:inset 3px 0 0 var(--yes)}
+.ti.fresh{animation:fresh 2.4s ease-out}
+@keyframes fresh{0%{background:var(--green-soft);transform:translateY(-6px);opacity:.3}12%{transform:none;opacity:1}100%{background:transparent}}
+.ti .who{display:flex;align-items:center;gap:7px;min-width:0;font-size:13.5px;color:var(--ink2)}
+.ti .who a{font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ti .who a:hover{color:var(--yes-deep)}
+.ti .who .av{width:18px;height:18px}
+.act{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:5px;padding:2px 6px;white-space:nowrap}
+.act.y{background:var(--yes-soft);color:var(--yes-deep)} .act.n{background:var(--no-soft);color:var(--no-deep)}
+.act.sell{box-shadow:inset 0 0 0 1px currentColor;background:transparent}
+.ti .amt{justify-self:end;font-family:var(--head);font-weight:800;font-variant-numeric:tabular-nums}
+.ti .mk{grid-column:1/-1;font-size:13px;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.ti .mk:hover{color:var(--yes-deep)}
+.ti .sub2{grid-column:1/-1;color:var(--ink3);font-size:12px;display:flex;gap:10px}
+.feed-empty{padding:28px 18px;color:var(--ink3);text-align:center;font-size:13.5px}
+.feed-note{margin:0;padding:10px 16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12px;background:var(--soft)}
+
+/* ---------- closing calendar (month view) ---------- */
+.calbox{--c0:#f1f1f3;--c1:#d9d7e3;--c2:#ffd3df;--c3:#ff9fb8;--c4:#f0577f;--c5:#a50f3a;margin:0 0 14px;background:#fff;border:1px solid #000;box-shadow:3px 3px 0 #000;border-radius:var(--radius);padding:16px 18px 14px}
+.calbox[hidden]{display:none}
+.cal-h{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.cal-h h2{margin:0 0 4px;font-family:var(--head);font-size:18px;font-weight:800;letter-spacing:-.01em}
+.cal-help{margin:0;color:var(--ink2);font-size:13.5px;max-width:78ch}
+.cal-help b{color:#000;font-weight:700}
+.cal-nav{display:flex;gap:6px;flex:none}
+.cal-nav button{width:34px;height:34px;border-radius:6px;border:1px solid #000;background:#fff;box-shadow:var(--shadow);cursor:pointer;font-size:16px;line-height:1}
+.cal-nav button:hover:not(:disabled){background:var(--yes-soft)}
+.cal-nav button:disabled{opacity:.3;cursor:default;box-shadow:none}
+.cal-info{min-height:24px;margin:10px 0 8px;color:var(--ink2);font-size:13.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cal-info b{color:#000;font-weight:700}
+.cal-scroll{overflow-x:auto;scroll-snap-type:x proximity;padding:2px 4px 10px;margin:0 -4px}
+.months{display:flex;gap:12px;width:max-content;min-width:100%}
+.month{flex:none;width:292px;scroll-snap-align:start;background:#fff;border:1px solid var(--line-input);border-radius:10px;padding:12px}
+.month.gap{width:190px;display:grid;place-content:center;text-align:center;color:var(--ink3);font-size:13px;border-style:dashed;background:var(--soft)}
+.month.gap b{display:block;color:var(--ink);font-weight:700;margin-bottom:2px}
+.mh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.mh b{font-family:var(--head);font-size:15px;font-weight:800}
+.mh span{color:var(--ink3);font-size:12px;white-space:nowrap}
+.dow,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{margin-bottom:4px;color:var(--ink3);font-size:11px;text-align:center;font-weight:700}
+.dc{position:relative;height:34px;border-radius:6px;background:var(--c0);border:0;padding:0;color:var(--ink3);font:inherit;display:block;cursor:default;text-align:left}
+.dc .dn{position:absolute;left:5px;top:3px;font-size:10px;line-height:1;font-weight:700;opacity:.75}
+.dc .ct{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--head);font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;padding-top:6px}
+.dc.pad{background:transparent;visibility:hidden}
+.dc.has{cursor:pointer;color:#000}
+.dc.has:hover,.dc.has:focus-visible{outline:2px solid #000;outline-offset:1px;z-index:1}
+.dc.l1{background:var(--c1)}
+.dc.l2{background:var(--c2)} .dc.l3{background:var(--c3)} .dc.l4{background:var(--c4)} .dc.l5{background:var(--c5);color:#fff}
+.dc.past{opacity:.4}
+.dc.today{box-shadow:inset 0 0 0 2px #000}
+.dc.sel{outline:3px solid #000;outline-offset:1px;z-index:2}
+.cal-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 18px;margin-top:6px;color:var(--ink3);font-size:12.5px;align-items:center}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.legend .lg{display:inline-flex;align-items:center;gap:6px;color:var(--ink2)}
+.legend i{width:16px;height:16px;border-radius:4px;display:block;background:var(--c0);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.legend .l1{background:var(--c1)} .legend .l2{background:var(--c2)} .legend .l3{background:var(--c3)} .legend .l4{background:var(--c4)} .legend .l5{background:var(--c5)}
+.clear-day{display:inline-flex;align-items:center;gap:8px;background:var(--yes);color:#000;border:1px solid #000;box-shadow:var(--shadow);border-radius:6px;padding:4px 10px;font-weight:700;font-size:13px;cursor:pointer}
+
+/* ---------- states ---------- */
+.empty,.errbox{border:1px dashed #000;border-radius:var(--radius);padding:28px;text-align:center;color:var(--ink2);background:#fff}
+.errbox{border-color:var(--red);color:var(--red)}
+.skel{height:300px;border-radius:var(--radius);background:linear-gradient(100deg,#f5f5f6 30%,#ececee 50%,#f5f5f6 70%);background-size:300% 100%;animation:sh 1.4s infinite linear;border:1px solid var(--line)}
+@keyframes sh{to{background-position:-150% 0}}
+.toast{position:fixed;left:50%;bottom:22px;translate:-50% 20px;opacity:0;pointer-events:none;background:#000;color:#fff;font-weight:600;border-radius:8px;padding:11px 16px;box-shadow:3px 3px 0 var(--yes);transition:.3s;z-index:40;max-width:calc(100vw - 32px)}
+.toast.show{translate:-50% 0;opacity:1;pointer-events:auto}
+
+footer{margin:44px 0 40px;padding-top:22px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px;line-height:1.6}
+footer b{color:var(--ink);font-weight:700}
+footer a{color:var(--ink2);text-decoration:underline;text-underline-offset:2px}
+
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  .feed{position:static;max-height:420px;min-height:0;margin-top:18px}
+}
+@media (max-width:760px){
+  .wrap{padding:0 14px}
+  .hide-sm{display:none}
+  .nav .wrap{gap:10px}
+  .brand{font-size:16px;white-space:nowrap}
+  #refresh{padding:8px 10px}
+  #refresh span{display:none}
+  .nav .live .txt{display:none}
+  .brand small{display:none}
+  .disclaimer .wrap{padding-top:5px;padding-bottom:5px;font-size:12px}
+  .refer{grid-template-columns:1fr;padding:10px 12px;margin-top:10px;gap:6px}
+  .refer .txt{font-size:14px}
+  .refer .act{justify-content:space-between}
+  .refer .disc{font-size:11px}
+  .head{padding:14px 0 10px;gap:10px}
+  .sub{display:none}
+  .kpis{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:0 3px 4px 0}
+  .kpi{flex:none;padding:5px 9px}
+  .toolbar .field{flex:1 1 100%}
+  .toolbar select{flex:1 1 110px}
+  .toolbar .btn{padding:0 11px}
+  #calBtn .btn-txt{display:none}
+  .calbox{padding:14px 12px 12px}
+  .month{width:262px}
+  .cal-nav{display:none}
+  .grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="PL Conviction Board home"><span class="mark">PL</span>Conviction Board<small>Unofficial</small></a>
+    <div class="spacer"></div>
+    <div class="live" id="live" role="status" aria-live="polite"><span class="dot"></span><span class="txt" id="liveTxt">Loading…</span></div>
+    <button class="btn" id="refresh" type="button" aria-label="Refresh now">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+      <span>Refresh</span>
+    </button>
+  </div>
+  <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+</header>
+<div class="disclaimer"><div class="wrap"><b>Not an official XO Market affiliate.</b> <span class="hide-sm">Independent fan-made tracker. Data comes from XO Market's public API; trading happens on </span><a href="https://beta.xo.market" target="_blank" rel="noopener noreferrer">XO Market</a><span class="hide-sm"> via the links below.</span></div></div>
+
+<main class="wrap">
+  <section class="refer" id="refer" hidden aria-label="Sign up to XO Market">
+    <div class="txt"><b>New to XO Market?</b> Sign up through my referral link, then trade any market below.</div>
+    <div class="act">
+      <span class="code">Code <b id="referCode"></b><button type="button" id="referCopy">Copy link</button></span>
+      <a class="btn pink" id="referCta" href="#" target="_blank" rel="noopener noreferrer">Sign up on XO Market ↗</a>
+    </div>
+    <p class="disc">Referral link: if you sign up through it, I may earn referral rewards from XO Market. This site is independent and not an official XO Market affiliate.</p>
+  </section>
+
+  <section class="head">
+    <div>
+      <h1>Premier League <em>convictions</em></h1>
+      <p class="sub">Live odds, expiry countdowns and trades. TheBallQuant's markets are pinned first.</p>
+    </div>
+    <div class="kpis" id="stats">
+      <div class="kpi"><b id="sCount">–</b> markets</div>
+      <div class="kpi"><b id="sVol">–</b> traded</div>
+      <div class="kpi soon"><b id="sSoon">–</b> closing in 24h</div>
+      <div class="kpi tbq"><b id="sTbq">–</b> by TheBallQuant</div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <label class="field">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search teams, players, creators…" autocomplete="off" aria-label="Search markets">
+    </label>
+    <select id="sort" aria-label="Sort markets">
+      <option value="closing">Sort: Closing soon</option>
+      <option value="volume">Sort: Volume</option>
+      <option value="trade">Sort: Last trade</option>
+      <option value="newest">Sort: Newest</option>
+      <option value="yes">Sort: Yes %</option>
+    </select>
+    <button type="button" class="btn" id="filtersBtn" aria-expanded="false" aria-controls="filtersPanel">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Filters <span class="badge" id="filtersBadge" hidden></span>
+    </button>
+    <div class="calwrap">
+      <div class="callout" id="calHint" aria-hidden="true">
+        <span>See when markets close!</span>
+        <svg viewBox="0 0 90 44" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 30C18 6 48 2 68 21" stroke="#000" stroke-width="9"/>
+          <path d="M6 30C18 6 48 2 68 21" stroke="#ff87a6" stroke-width="5"/>
+          <path d="M84 31L72 12L58 28Z" fill="#ff87a6" stroke="#000" stroke-width="3"/>
+        </svg>
+      </div>
+      <button type="button" class="btn" id="calBtn" aria-expanded="false" aria-controls="calPanel" aria-label="Closing calendar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <span class="btn-txt">Calendar</span>
+      </button>
+    </div>
+  </div>
+  <div class="panel" id="filtersPanel" hidden>
+    <div class="grp"><span class="lbl">Club</span><select id="team" aria-label="Filter by club"><option value="">All clubs</option></select></div>
+    <div class="grp"><span class="lbl">Creator</span><select id="creator" aria-label="Filter by creator"><option value="">All creators</option></select></div>
+    <div class="grp chips" id="closeChips" role="group" aria-label="Closing window">
+      <span class="lbl">Closes</span>
+      <button class="chip" type="button" data-w="" aria-pressed="true">Any time</button>
+      <button class="chip" type="button" data-w="day" aria-pressed="false">Within 24h<span class="n" id="nDay"></span></button>
+      <button class="chip" type="button" data-w="week" aria-pressed="false">This week<span class="n" id="nWeek"></span></button>
+      <button class="chip" type="button" data-w="later" aria-pressed="false">Later<span class="n" id="nLater"></span></button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="traded"> Traded only</label>
+  </div>
+  <div class="chips scroll" id="catChips" role="group" aria-label="Category"></div>
+  <div class="activebar" id="activebar" hidden><span id="resultNote"></span><button type="button" class="btn clear" id="clearAll">Clear all filters</button></div>
+
+  <section class="calbox" id="calPanel" hidden aria-labelledby="calH">
+    <div class="cal-h">
+      <div>
+        <h2 id="calH">Closing calendar</h2>
+        <p class="cal-help">Each square is a day. The <b>number</b> is how many markets close that day, and the <b>deeper the pink</b>, the more money has been traded on them. <b>Click a day</b> to see only those markets.</p>
+      </div>
+      <div class="cal-nav"><button type="button" id="calPrev" aria-label="Earlier months">←</button><button type="button" id="calNext" aria-label="Later months">→</button></div>
+    </div>
+    <div class="cal-info" id="calInfo" aria-live="polite"></div>
+    <div class="cal-scroll" id="calScroll"><div class="months" id="cal"></div></div>
+    <div class="cal-foot">
+      <div class="legend" id="legend" aria-label="Colour key: total volume of markets closing that day"></div>
+      <div id="calNote"></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <div id="out">
+      <div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+    </div>
+
+    <aside class="feed" aria-label="Live trades">
+      <div class="feed-h">
+        <h2>Live trades</h2>
+        <span class="pill off" id="feedStatus"><span class="dot"></span><span>Connecting</span></span>
+      </div>
+      <div class="feed-tools"><label class="toggle"><input type="checkbox" id="feedPin"> TheBallQuant markets only</label></div>
+      <ol class="feed-list" id="feedList"><li class="feed-empty">Loading recent trades…</li></ol>
+      <p class="feed-note">Trades on the markets listed here only. New trades appear instantly via XO's live feed.</p>
+    </aside>
+  </div>
+
+  <footer>
+    <p><b>Unofficial.</b> PL Conviction Board is an independent project and is not affiliated with, endorsed by, or connected to XO Market, SenseLabs, or the Premier League. Names and brand colours belong to their respective owners.</p>
+    <p>Odds are the market price shown by XO Market (0–100¢ per share); the price you actually get depends on the live order book, so check it on XO before you trade. Volume is in USD. Markets are user-created, so read each market's resolution rules on XO before trading. Prediction markets carry risk, and this is not financial advice. Only active markets are listed; pending, closed and cancelled markets are hidden. Clubs and categories are worked out from each market's title, so the odd market may be filed in the wrong place.</p>
+  </footer>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+  const XO = 'https://beta.xo.market';
+  // Your XO referral code (find it on https://beta.xo.market/referrals while logged in).
+  // Leave empty to hide the referral banner. When set, trade links also carry ?r=<code>.
+  const REFERRAL_CODE = 'theballquant';
+  const SOCKET_URL = 'https://api-mainnet.xo.market/trading-activity';
+  const SOCKET_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js';
+  const REFRESH_MS = 60_000;          // markets + odds
+  const TRADES_MS = 30_000;           // trades fallback poll (the socket is the fast path)
+  const PIN_USER = 'theballquant';    // compared case-insensitively
+  const NEW_WINDOW_MS = 6 * 3600_000; // "NEW" badge for markets younger than this
+  const MAX_TRADES = 60;
+  const SHOW_TRADES = 40;
+
+  const $ = (id) => document.getElementById(id);
+  const els = { out:$('out'), q:$('q'), team:$('team'), catChips:$('catChips'), creator:$('creator'), sort:$('sort'), traded:$('traded'),
+    live:$('live'), liveTxt:$('liveTxt'), refresh:$('refresh'), meter:$('meterFill'), toast:$('toast'),
+    sCount:$('sCount'), sVol:$('sVol'), sSoon:$('sSoon'), sTbq:$('sTbq'),
+    calInfo:$('calInfo'), clearAll:$('clearAll'), resultNote:$('resultNote'), activebar:$('activebar'), filtersBtn:$('filtersBtn'), filtersPanel:$('filtersPanel'), filtersBadge:$('filtersBadge'), calBtn:$('calBtn'), calPanel:$('calPanel'), cal:$('cal'), calNote:$('calNote'), legend:$('legend'), feedList:$('feedList'), feedStatus:$('feedStatus'), feedPin:$('feedPin'), chips:$('closeChips') };
+
+  let markets = [];
+  const byEvent = new Map();         // event id -> market
+  const byContract = new Map();      // lowercase contract market id -> market
+  let fetchedAt = null, nextAt = Date.now() + REFRESH_MS, nextTradesAt = 0;
+  let inflight = false, failed = false, firstLoad = true, closeWindow = '', dayFilter = '', category = '';
+  const arrivedThisSession = new Set();
+  const seen = new Set();
+  const lastYes = new Map();
+  const deltas = new Map();
+
+  const trades = new Map();          // key -> trade
+  const freshKeys = new Set();
+  let tradesLoaded = false, socketState = 'off';
+
+  /* ---------- helpers ---------- */
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const safeImg = (u) => (typeof u === 'string' && /^https:\/\//i.test(u)) ? esc(u) : '';
+  const fmtUsd = (n) => {
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(n >= 1e4 ? 1 : 2) + 'k';
+    const r = Math.round(n * 100) / 100;
+    return '$' + (Number.isInteger(r) ? r : r.toFixed(2));
+  };
+  const pct = (p) => p == null ? null : Math.round(p * 100);
+  const isPin = (m) => (m?.creator?.username || '').toLowerCase() === PIN_USER;
+  const withRef = (u) => REFERRAL_CODE ? u + (u.includes('?') ? '&' : '?') + 'r=' + encodeURIComponent(REFERRAL_CODE) : u;
+  const marketUrl = (slug) => withRef(`${XO}/event/${encodeURIComponent(slug)}`);
+  const profileUrl = (u) => `${XO}/profile/${encodeURIComponent(u)}`;
+  const isNew = (m) => arrivedThisSession.has(m.id) || (Date.now() - new Date(m.createdAt) < NEW_WINDOW_MS);
+  const expMs = (m) => m.expiresAt ? new Date(m.expiresAt) - Date.now() : Infinity;
+  const short = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : 'unknown';
+  function toast(msg) {
+    els.toast.textContent = msg; els.toast.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => els.toast.classList.remove('show'), 5000);
+  }
+
+  // countdown text + urgency class
+  function countdown(ms) {
+    if (ms === Infinity) return { text: 'No expiry', cls: '' };
+    if (ms <= 0) return { text: 'Awaiting result', cls: 'over' };
+    const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600),
+      mi = Math.floor(s % 3600 / 60), sec = s % 60, p = (n) => String(n).padStart(2, '0');
+    const cls = ms < 3600_000 ? 'urgent' : ms < 86400_000 ? 'soon' : '';
+    if (d >= 1) return { text: `${d}d ${h}h ${p(mi)}m`, cls };
+    if (s >= 6 * 3600) return { text: `${d * 24 + h}h ${p(mi)}m`, cls };
+    if (s >= 3600) return { text: `${h}h ${p(mi)}m ${p(sec)}s`, cls };
+    return { text: `${mi}m ${p(sec)}s`, cls };
+  }
+  const whenText = (iso) => iso ? new Date(iso).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  const life = (m) => {
+    const a = new Date(m.createdAt).getTime(), b = m.expiresAt ? new Date(m.expiresAt).getTime() : null;
+    return b && b > a ? Math.min(100, Math.max(0, (Date.now() - a) / (b - a) * 100)) : 0;
+  };
+  function ago(iso) {
+    const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
+    if (s < 10) return 'just now';
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    return Math.floor(s / 86400) + 'd ago';
+  }
+
+  /* ---------- tagging (clubs + topics, derived from titles) ---------- */
+  const TEAMS = {
+    'Arsenal': /\barsenal\b|\bgunners\b/i, 'Aston Villa': /\baston villa\b|\bvilla\b/i, 'Bournemouth': /\bbournemouth\b/i,
+    'Brentford': /\bbrentford\b/i, 'Brighton': /\bbrighton\b/i, 'Burnley': /\bburnley\b/i, 'Chelsea': /\bchelsea\b/i,
+    'Coventry': /\bcoventry\b/i, 'Crystal Palace': /\bcrystal palace\b/i, 'Everton': /\beverton\b/i, 'Fulham': /\bfulham\b/i,
+    'Ipswich': /\bipswich\b/i, 'Leeds': /\bleeds\b/i, 'Liverpool': /\bliverpool\b/i,
+    'Man City': /\bman(chester)? city\b/i, 'Man United': /\bman(chester)? (utd|united)\b|\bman u\b/i,
+    'Newcastle': /\bnewcastle\b/i, 'Nottm Forest': /\bnott(ingham|'m)? forest\b/i, 'Spurs': /\btottenham\b|\bspurs\b/i,
+    'Sunderland': /\bsunderland\b/i, 'West Ham': /\bwest ham\b/i, 'Wolves': /\bwolves\b|\bwolverhampton\b/i,
+  };
+  function tag(m) {
+    m._teams = Object.keys(TEAMS).map((t) => [t, m.title.search(TEAMS[t])]).filter(([, i]) => i >= 0)
+      .sort((a, b) => a[1] - b[1]).map(([t]) => t);   // in the order the clubs are mentioned
+  }
+
+  /* ---------- markets: load + ingest ---------- */
+  async function load(manual = false) {
+    if (inflight) return;
+    inflight = true; setLive('busy');
+    try {
+      const res = await fetch('/api/markets', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.status);
+      ingest(data);
+      failed = false;
+      if (manual) toast('Updated just now');
+    } catch (e) {
+      failed = true;
+      if (!markets.length) els.out.innerHTML = `<div class="errbox"><b>Couldn't load markets.</b><br>XO Market's API didn't respond. Retrying automatically, or <button class="btn" id="retry" type="button" style="margin-left:6px">retry now</button></div>`;
+      const r = $('retry'); if (r) r.onclick = () => load(true);
+    } finally {
+      inflight = false; nextAt = Date.now() + REFRESH_MS; setLive();
+    }
+  }
+
+  function ingest(data) {
+    const fresh = [];
+    byEvent.clear(); byContract.clear();
+    for (const m of data.markets) {
+      tag(m);
+      byEvent.set(m.id, m);
+      if (m.contractMarketId) byContract.set(m.contractMarketId, m);
+      const y = m.outcomes[0]?.price;
+      if (lastYes.has(m.id) && y != null) {
+        const d = Math.round((y - lastYes.get(m.id)) * 100);
+        if (d) deltas.set(m.id, { d });
+      }
+      if (y != null) lastYes.set(m.id, y);
+      if (!seen.has(m.id)) { seen.add(m.id); if (!firstLoad) { fresh.push(m); arrivedThisSession.add(m.id); } }
+    }
+    markets = data.markets; fetchedAt = new Date(data.fetchedAt);
+    if (fresh.length) {
+      const t = fresh.find(isPin);
+      toast(t ? `New TheBallQuant market: ${t.title}` : `${fresh.length} new market${fresh.length > 1 ? 's' : ''} just posted`);
+    }
+    firstLoad = false;
+    syncSelects();
+    renderCatChips();
+    render(new Set(fresh.map((m) => m.id)));
+    renderFeed();
+  }
+
+  /* ---------- filters ---------- */
+  function syncSelects() {
+    const keep = (sel, html) => { const cur = sel.value; sel.innerHTML = html; sel.value = [...sel.options].some((o) => o.value === cur) ? cur : ''; };
+    const names = [...new Set(markets.map((m) => m.creator?.username).filter(Boolean))].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    keep(els.creator, '<option value="">All creators</option>' + names.map((n) => `<option value="${esc(n)}">@${esc(n)}</option>`).join(''));
+    const counts = {};
+    markets.forEach((m) => m._teams.forEach((t) => { counts[t] = (counts[t] || 0) + 1; }));
+    keep(els.team, '<option value="">All clubs</option>' + Object.keys(counts).sort().map((t) => `<option value="${esc(t)}">${esc(t)} (${counts[t]})</option>`).join(''));
+  }
+  const bucket = (m) => { const ms = expMs(m); return ms < 86400_000 ? 'day' : ms < 7 * 86400_000 ? 'week' : 'later'; };
+  const lastTradeAt = (m) => { let t = 0; for (const x of trades.values()) if (x.eventId === m.id) t = Math.max(t, +new Date(x.at)); return t; };
+  const sorters = {
+    closing: (a, b) => (expMs(a) <= 0) - (expMs(b) <= 0) || (a.expiresAt ? +new Date(a.expiresAt) : 8.64e15) - (b.expiresAt ? +new Date(b.expiresAt) : 8.64e15),
+    volume:  (a, b) => b.volume - a.volume || new Date(b.createdAt) - new Date(a.createdAt),
+    trade:   (a, b) => lastTradeAt(b) - lastTradeAt(a) || b.volume - a.volume,
+    newest:  (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    yes:     (a, b) => (b.outcomes[0]?.price ?? -1) - (a.outcomes[0]?.price ?? -1),
+  };
+  function filtered({ skipTime = false } = {}) {
+    const q = els.q.value.trim().toLowerCase(), who = els.creator.value, team = els.team.value;
+    return markets.filter((m) =>
+      (!q || (m.title + ' ' + (m.creator?.username || '') + ' ' + (m.description || '')).toLowerCase().includes(q)) &&
+      (!who || m.creator?.username === who) &&
+      (!team || m._teams.includes(team)) &&
+      (!category || m.category === category) &&
+      (skipTime || ((!closeWindow || bucket(m) === closeWindow) && (!dayFilter || dayKey(m.expiresAt) === dayFilter))) &&
+      (!els.traded.checked || m.volume > 0)
+    ).sort(sorters[els.sort.value]);
+  }
+
+  function activeFilters() {
+    return [els.q.value.trim(), els.team.value, category, els.creator.value, els.traded.checked, closeWindow, dayFilter].filter(Boolean).length;
+  }
+  function clearAll() {
+    els.q.value = ''; els.team.value = ''; category = ''; els.creator.value = ''; els.traded.checked = false;
+    closeWindow = ''; dayFilter = '';
+    els.chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.w === '')));
+    renderCatChips();
+    render();
+  }
+  function syncFilterUi(shown) {
+    const n = activeFilters();
+    els.activebar.hidden = !n;
+    els.clearAll.textContent = `Clear all filters (${n})`;
+    const day = dayFilter ? ` · closing ${esc(new Date(dayFilter + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }))}` : '';
+    els.resultNote.innerHTML = `Showing <b>${shown}</b> of <b>${markets.length}</b> markets${day}`;
+    const panelN = [els.team.value, els.creator.value, closeWindow, els.traded.checked].filter(Boolean).length;
+    els.filtersBadge.hidden = !panelN; els.filtersBadge.textContent = panelN;
+  }
+
+  function renderCatChips() {
+    const counts = new Map();
+    markets.forEach((m) => counts.set(m.category, (counts.get(m.category) || 0) + 1));
+    const names = [...counts.keys()].sort((a, b) => (a === 'Other') - (b === 'Other') || counts.get(b) - counts.get(a) || a.localeCompare(b));
+    if (category && !counts.has(category)) category = '';
+    els.catChips.innerHTML =
+      `<button class="chip" type="button" data-c="" aria-pressed="${category === ''}">All<span class="n">${markets.length}</span></button>` +
+      names.map((n) => `<button class="chip" type="button" data-c="${esc(n)}" aria-pressed="${category === n}">${esc(n)}<span class="n">${counts.get(n)}</span></button>`).join('');
+  }
+
+  /* ---------- market cards ---------- */
+  const clock = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  function card(m, flashIds) {
+    const [a, b] = m.outcomes;
+    const yp = pct(a?.price), np = pct(b?.price);
+    const tot = (yp ?? 0) + (np ?? 0) || 100;
+    const binary = /^yes$/i.test(a?.title || '');
+    const dlt = deltas.get(m.id);
+    const dHtml = dlt ? `<span class="delta ${dlt.d > 0 ? 'up' : 'down'}" title="Change since last refresh">${dlt.d > 0 ? '▲' : '▼'} ${Math.abs(dlt.d)}</span>` : '';
+    const c = m.creator, img = safeImg(m.image), av = safeImg(c?.avatar), url = marketUrl(m.slug);
+    const cd = countdown(expMs(m));
+    const lt = lastTradeAt(m);
+    return `<article class="card${isPin(m) ? ' pin' : ''}${flashIds?.has(m.id) ? ' flash' : ''}" data-id="${esc(m.id)}">
+      <div class="top">
+        <div class="thumb" ${img ? `style="background-image:url('${img}')"` : ''}></div>
+        <div style="min-width:0">
+          <h3 class="title"><a href="${url}" target="_blank" rel="noopener noreferrer">${esc(m.title)}</a>${isNew(m) ? '<span class="tag new">New</span>' : ''}</h3>
+          <div class="by">Posted by ${c ? `<a href="${profileUrl(c.username)}" target="_blank" rel="noopener noreferrer">${av ? `<img class="av" src="${av}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="av"></span>'}<span>@${esc(c.username)}</span></a>${isPin(m) ? '<span class="tag tbq">Pinned</span>' : ''}` : '<span>unknown</span>'}<span class="tag cat">${esc(m.category)}</span>${m._teams.slice(0, 3).map((t) => `<span class="tag team">${esc(t)}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${m.description && m.description.trim().toLowerCase() !== m.title.trim().toLowerCase() ? `<p class="desc">${esc(m.description)}</p>` : ''}
+      <div class="odds">
+        <div class="big">${yp ?? '–'}<small>% ${binary ? 'Yes chance' : esc(a?.title || '')}</small></div>${dHtml}
+      </div>
+      <div class="bar" role="img" aria-label="${esc(a?.title)} ${yp ?? '?'}%, ${esc(b?.title)} ${np ?? '?'}%"><i class="y" style="width:${((yp ?? 0) / tot * 100).toFixed(1)}%"></i><i class="n" style="width:${((np ?? 0) / tot * 100).toFixed(1)}%"></i></div>
+      <div class="expiry ${cd.cls}" ${m.expiresAt ? `data-exp="${esc(m.expiresAt)}" data-id="${esc(m.id)}"` : ''}>
+        <span class="lbl">${clock} Closes in</span><b class="cd">${esc(cd.text)}</b>
+        <div class="when"><span>${esc(whenText(m.expiresAt))}</span><span>${m.expiresAt ? Math.round(life(m)) + '% of lifetime elapsed' : ''}</span></div>
+        <div class="life"><i style="width:${life(m).toFixed(1)}%"></i></div>
+      </div>
+      <div class="meta"><span>Volume <b>${fmtUsd(m.volume)}</b></span>${lt ? `<span>Last trade <b class="ago" data-t="${new Date(lt).toISOString()}">${ago(new Date(lt))}</b></span>` : ''}${m.liveOdds ? '' : '<span title="Live price unavailable, showing last known">odds may be stale</span>'}</div>
+      <div class="trade">
+        <a class="side y" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Trade ${esc(a?.title)} on XO Market"><span>${esc(a?.title || 'Yes')}</span><em>${yp ?? '–'}¢</em></a>
+        <a class="side n" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Trade ${esc(b?.title)} on XO Market"><span>${esc(b?.title || 'No')}</span><em>${np ?? '–'}¢</em></a>
+      </div>
+      <a class="ext" href="${url}" target="_blank" rel="noopener noreferrer">Trade on XO Market ↗</a>
+    </article>`;
+  }
+
+  function render(flashIds) {
+    const list = filtered();
+    const pinned = list.filter(isPin), rest = list.filter((m) => !isPin(m));
+    const tbqAll = markets.filter(isPin);
+    const pinAvatar = safeImg(tbqAll[0]?.creator?.avatar);
+
+    syncFilterUi(list.length);
+    els.sCount.textContent = markets.length;
+    els.sVol.textContent = fmtUsd(markets.reduce((s, m) => s + m.volume, 0));
+    els.sSoon.textContent = markets.filter((m) => { const ms = expMs(m); return ms > 0 && ms < 86400_000; }).length;
+    els.sTbq.textContent = tbqAll.length;
+    const nb = { day: 0, week: 0, later: 0 }; markets.forEach((m) => nb[bucket(m)]++);
+    $('nDay').textContent = nb.day; $('nWeek').textContent = nb.week; $('nLater').textContent = nb.later;
+
+    let html = '';
+    if (tbqAll.length) {
+      html += `<section class="section pinned"><div class="section-h">${pinAvatar ? `<img class="av" src="${pinAvatar}" alt="" referrerpolicy="no-referrer">` : ''}<h2>TheBallQuant</h2><span class="count">${pinned.length === tbqAll.length ? tbqAll.length : pinned.length + ' of ' + tbqAll.length}</span><span class="pin-note">Pinned at the top</span></div>` +
+        (pinned.length ? `<div class="grid">${pinned.map((m) => card(m, flashIds)).join('')}</div>` : '<div class="empty">None of TheBallQuant\'s markets match the current filters.</div>') + '</section>';
+    }
+    html += `<section class="section rest">` +
+      (rest.length ? `<div class="grid">${rest.map((m) => card(m, flashIds)).join('')}</div>` : `<div class="empty">${markets.length ? 'No markets match your filters. <button type="button" class="btn clear" data-clear style="margin-left:8px">Clear all filters</button>' : 'No live Premier League convictions right now. This page checks again automatically.'}</div>`) + '</section>';
+    els.out.innerHTML = html;
+    renderCalendar();
+  }
+
+  /* ---------- closing calendar (month view) ---------- */
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const keyOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const dayKey = (iso) => iso ? keyOf(new Date(iso)) : '';
+  const dayLabel = (d) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const monthName = (d, withYear = true) => d.toLocaleDateString('en-GB', withYear ? { month: 'long', year: 'numeric' } : { month: 'short' });
+  const calScroll = $('calScroll');
+  let calDays = new Map();
+
+  function renderCalendar() {
+    const list = filtered({ skipTime: true });
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const MAX_WEEKS = 60, horizon = new Date(today); horizon.setDate(horizon.getDate() + MAX_WEEKS * 7);
+    const days = new Map(); let overdue = 0, noExpiry = 0, beyond = 0, beyondLast = null, lastEnd = new Date(today);
+    for (const m of list) {
+      if (!m.expiresAt) { noExpiry++; continue; }
+      const d = new Date(m.expiresAt); d.setHours(0, 0, 0, 0);
+      if (d < today) { overdue++; continue; }
+      if (d >= horizon) { beyond++; if (!beyondLast || d > beyondLast) beyondLast = d; continue; }
+      const k = keyOf(d), e = days.get(k) || { d, n: 0, vol: 0, ms: [] };
+      e.n++; e.vol += m.volume; e.ms.push(m); days.set(k, e);
+      if (d > lastEnd) lastEnd = d;
+    }
+    calDays = days;
+
+    // colour bands come from the live spread of daily volume (nothing hardcoded)
+    const vols = [...days.values()].map((e) => e.vol).filter((v) => v > 0).sort((a, b) => a - b);
+    const q = (p) => vols.length ? vols[Math.min(vols.length - 1, Math.floor(p * vols.length))] : 0;
+    const cuts = [q(0.25), q(0.5), q(0.75)];
+    const level = (e) => !e ? 0 : e.vol <= 0 ? 1 : e.vol <= cuts[0] ? 2 : e.vol <= cuts[1] ? 3 : e.vol <= cuts[2] ? 4 : 5;
+
+    // one tile per month; runs of empty months collapse into a single "nothing closes" tile
+    const months = [];
+    for (let c = new Date(today.getFullYear(), today.getMonth(), 1); c <= lastEnd; c = new Date(c.getFullYear(), c.getMonth() + 1, 1)) {
+      let n = 0, vol = 0;
+      const dim = new Date(c.getFullYear(), c.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= dim; day++) { const e = days.get(keyOf(new Date(c.getFullYear(), c.getMonth(), day))); if (e) { n += e.n; vol += e.vol; } }
+      months.push({ c, n, vol, dim });
+    }
+    if (!months.length) months.push({ c: new Date(today.getFullYear(), today.getMonth(), 1), n: 0, vol: 0, dim: new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() });
+    const tiles = [];
+    for (let i = 0; i < months.length;) {
+      const mo = months[i];
+      if (mo.n === 0 && i > 0) {
+        let j = i; while (j + 1 < months.length && months[j + 1].n === 0) j++;
+        const a = months[i].c, z = months[j].c;
+        tiles.push(`<div class="month gap"><div><b>${i === j ? monthName(a) : monthName(a, false) + ' – ' + monthName(z, false)}</b>nothing closes</div></div>`);
+        i = j + 1; continue;
+      }
+      const lead = (mo.c.getDay() + 6) % 7; // Monday-first
+      let cells = '<span class="dc pad"></span>'.repeat(lead);
+      for (let day = 1; day <= mo.dim; day++) {
+        const d = new Date(mo.c.getFullYear(), mo.c.getMonth(), day), k = keyOf(d), e = days.get(k), lv = level(e);
+        const cls = `dc l${lv}${e ? ' has' : ''}${d < today ? ' past' : ''}${+d === +today ? ' today' : ''}${dayFilter === k ? ' sel' : ''}`;
+        cells += e
+          ? `<button type="button" class="${cls}" data-k="${k}" aria-label="${esc(`${dayLabel(d)}: ${e.n} market${e.n > 1 ? 's' : ''} close, ${fmtUsd(e.vol)} traded`)}"><span class="dn">${day}</span><span class="ct">${e.n}</span></button>`
+          : `<span class="${cls}"><span class="dn">${day}</span></span>`;
+      }
+      tiles.push(`<div class="month"><div class="mh"><b>${esc(monthName(mo.c))}</b><span>${mo.n ? `${mo.n} market${mo.n > 1 ? 's' : ''} · ${esc(fmtUsd(mo.vol))}` : 'nothing closes'}</span></div><div class="dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="days">${cells}</div></div>`);
+      i++;
+    }
+    const keepScroll = calScroll.scrollLeft;
+    els.cal.innerHTML = tiles.join('');
+    calScroll.scrollLeft = keepScroll;
+    navState();
+
+    const L = [['', 'Nothing closes'], ['l1', 'Closes, nothing traded yet'], ['l2', `Up to ${fmtUsd(cuts[0])} traded`], ['l3', `${fmtUsd(cuts[0])} to ${fmtUsd(cuts[1])}`], ['l4', `${fmtUsd(cuts[1])} to ${fmtUsd(cuts[2])}`], ['l5', `Over ${fmtUsd(cuts[2])}`]];
+    els.legend.innerHTML = '<span style="color:var(--ink3)">Colour = volume traded on that day\'s markets:</span>' + L.map(([c, t]) => `<span class="lg"><i class="${c}"></i>${esc(t)}</span>`).join('');
+    const bits = [];
+    if (overdue) bits.push(`${overdue} past close time, awaiting result`);
+    if (noExpiry) bits.push(`${noExpiry} with no close date`);
+    if (beyond) bits.push(`${beyond} market${beyond > 1 ? 's close' : ' closes'} after this view (latest ${beyondLast.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})`);
+    els.calNote.textContent = bits.join(' · ');
+    resetCalInfo();
+  }
+  function navState() {
+    $('calPrev').disabled = calScroll.scrollLeft < 4;
+    $('calNext').disabled = calScroll.scrollLeft + calScroll.clientWidth >= calScroll.scrollWidth - 4;
+  }
+  function clearDayBtn() { const c = $('clearDay'); if (c) c.onclick = () => { dayFilter = ''; render(); }; }
+  function resetCalInfo() {
+    if (dayFilter && calDays.get(dayFilter)) { showDay(calDays.get(dayFilter), true); return; }
+    if (dayFilter) {
+      els.calInfo.innerHTML = 'No markets close on that day with the current filters. <button type="button" class="clear-day" id="clearDay">Clear day <span aria-hidden="true">✕</span></button>';
+      clearDayBtn(); return;
+    }
+    els.calInfo.textContent = 'Hover or tap a day for details.';
+  }
+  function showDay(e, selected) {
+    const first = e.ms.map((m) => new Date(m.expiresAt)).sort((a, b) => a - b)[0];
+    els.calInfo.innerHTML = `<b>${esc(dayLabel(e.d))}</b> · ${e.n} market${e.n > 1 ? 's' : ''} close · <b>${esc(fmtUsd(e.vol))}</b> traded · first closes ${esc(first.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))}${selected ? ' <button type="button" class="clear-day" id="clearDay">Showing only this day <span aria-hidden="true">✕</span></button>' : ''}`;
+    clearDayBtn();
+  }
+
+  /* ---------- live trades feed ---------- */
+  const tkey = (t) => `${t.tx || 'id' + t.id}|${t.outcome}`;
+  function addTrades(list) {
+    let added = 0;
+    for (const t of list) {
+      if (!t.eventId || !byEvent.has(t.eventId)) continue;     // only markets shown on this board
+      const k = tkey(t), prev = trades.get(k);
+      if (!prev) { if (tradesLoaded) freshKeys.add(k); added++; }
+      if (!prev || prev.provisional) trades.set(k, t);          // REST row upgrades a socket-only row
+    }
+    if (trades.size > MAX_TRADES) {
+      [...trades.entries()].sort((a, b) => new Date(b[1].at) - new Date(a[1].at)).slice(MAX_TRADES).forEach(([k]) => trades.delete(k));
+    }
+    return added;
+  }
+  async function loadTrades() {
+    nextTradesAt = Date.now() + TRADES_MS;
+    try {
+      const res = await fetch('/api/trades', { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const d = await res.json();
+      // markets may not be loaded yet on the very first call; wait for them
+      for (let i = 0; i < 40 && !byEvent.size; i++) await new Promise((r) => setTimeout(r, 250));
+      addTrades(d.trades);
+      tradesLoaded = true;
+      renderFeed();
+    } catch { if (!tradesLoaded) els.feedList.innerHTML = '<li class="feed-empty">Couldn\'t load trades right now. Retrying…</li>'; }
+  }
+
+  function feedItem(t) {
+    const m = byEvent.get(t.eventId);
+    const idx = m ? m.outcomes.findIndex((o) => o.title === t.outcome) : 0;
+    const cls = idx === 1 ? 'n' : 'y';
+    const sell = t.side === 'SELL';
+    const av = safeImg(t.user?.avatar);
+    const name = t.user?.username;
+    const who = name
+      ? `${av ? `<img class="av" src="${av}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="av"></span>'}<a href="${profileUrl(name)}" target="_blank" rel="noopener noreferrer">@${esc(name)}</a>`
+      : `<span class="av"></span><a href="${XO}" target="_blank" rel="noopener noreferrer" title="${esc(t.user?.address || '')}">${esc(short(t.user?.address))}</a>`;
+    const k = tkey(t);
+    return `<li class="ti${isPin(m) ? ' pin' : ''}${freshKeys.has(k) ? ' fresh' : ''}">
+      <div class="who">${who}<span class="act ${cls}${sell ? ' sell' : ''}">${sell ? 'Sold' : 'Bought'} ${esc(t.outcome)}</span></div>
+      <div class="amt">${fmtUsd(t.usd)}</div>
+      <a class="mk" href="${marketUrl(m?.slug || t.slug)}" target="_blank" rel="noopener noreferrer">${esc(m?.title || t.title)}</a>
+      <div class="sub2"><span>at ${t.price != null ? Math.round(t.price * 100) + '¢' : '–'}</span><time class="ago" data-t="${esc(t.at)}">${ago(t.at)}</time></div>
+    </li>`;
+  }
+  function renderFeed() {
+    if (!tradesLoaded) return;
+    let list = [...trades.values()].filter((t) => byEvent.has(t.eventId)).sort((a, b) => new Date(b.at) - new Date(a.at));
+    if (els.feedPin.checked) list = list.filter((t) => isPin(byEvent.get(t.eventId)));
+    list = list.slice(0, SHOW_TRADES);
+    els.feedList.innerHTML = list.length ? list.map(feedItem).join('')
+      : `<li class="feed-empty">${els.feedPin.checked ? 'No recent trades on TheBallQuant markets yet.' : 'No trades yet. Trades will appear here the moment they happen.'}</li>`;
+    freshKeys.clear();
+  }
+  function setFeedStatus() {
+    const map = { live: ['', 'Live'], poll: ['poll', 'Polling'], off: ['off', 'Connecting'] };
+    const [cls, txt] = map[socketState] || map.off;
+    els.feedStatus.className = 'pill ' + cls; els.feedStatus.lastElementChild.textContent = txt;
+  }
+
+  // live socket: XO streams every trade on the platform; we keep the ones on our markets
+  const pendingRefresh = new Map();
+  function onSocketTrade(u) {
+    const m = byContract.get(String(u.marketId || '').toLowerCase());
+    const a = u.activity;
+    if (!m || !a) return;
+    const price = Number(a.priceAtExecution) / 1e6;
+    const t = { id: a.transactionHash, tx: a.transactionHash, at: a.executedAt || u.timestamp, side: a.positionType, outcome: a.outcomeName,
+      price: Number.isFinite(price) ? price : null, usd: Number(a.volumeInUSD) || 0, user: { username: null, avatar: null, address: a.userAddress },
+      eventId: m.id, slug: m.slug, title: m.title, provisional: true };
+    addTrades([t]);
+    renderFeed();
+    const cardEl = els.out.querySelector(`.card[data-id="${CSS.escape(m.id)}"]`);
+    if (cardEl) { cardEl.classList.remove('flash'); void cardEl.offsetWidth; cardEl.classList.add('flash'); }
+    if (isPin(m)) toast(`${fmtUsd(t.usd)} ${t.side === 'SELL' ? 'sold' : 'bought'} ${t.outcome} on ${m.title}`);
+    // fetch the real record (username/avatar) shortly after, then replace the provisional row
+    clearTimeout(pendingRefresh.get(m.id));
+    pendingRefresh.set(m.id, setTimeout(async () => {
+      try {
+        const r = await fetch('/api/trades?event=' + encodeURIComponent(m.id), { cache: 'no-store' });
+        if (r.ok) { for (const x of (await r.json()).trades) { const k = tkey(x), p = trades.get(k); if (p?.provisional) trades.set(k, x); else if (!p) addTrades([x]); } renderFeed(); }
+      } catch {}
+    }, 4000));
+  }
+  function startSocket() {
+    const s = document.createElement('script');
+    s.src = SOCKET_LIB; s.async = true;
+    s.onerror = () => { socketState = 'poll'; setFeedStatus(); };
+    s.onload = () => {
+      try {
+        const sock = window.io(SOCKET_URL, { transports: ['websocket'], reconnection: true, reconnectionDelay: 1500, reconnectionDelayMax: 10000 } /* XO's long-polling transport is CORS-blocked, so WebSocket only */);
+        sock.on('connect', () => { socketState = 'live'; setFeedStatus(); loadTrades(); });
+        sock.on('disconnect', () => { socketState = 'poll'; setFeedStatus(); });
+        sock.on('connect_error', () => { socketState = 'poll'; setFeedStatus(); });
+        sock.on('batched_trading_activity', (e) => (e?.updates || []).forEach((u) => { if (u.type === 'trading_activity') onSocketTrade(u); }));
+      } catch { socketState = 'poll'; setFeedStatus(); }
+    };
+    document.head.appendChild(s);
+  }
+
+  /* ---------- status + timers ---------- */
+  function setLive(state) {
+    els.live.className = 'live' + (state === 'busy' ? ' busy' : failed ? ' err' : '');
+    if (state === 'busy') { els.liveTxt.textContent = 'Updating…'; return; }
+    tick();
+  }
+  function tick() {
+    if (inflight) return;
+    const left = Math.max(0, Math.ceil((nextAt - Date.now()) / 1000));
+    const age = fetchedAt ? Math.max(0, Math.round((Date.now() - fetchedAt) / 1000)) : null;
+    els.liveTxt.textContent = failed ? `Connection issue · retrying in ${left}s`
+      : age == null ? 'Loading…' : `Live · odds updated ${age < 5 ? 'just now' : age < 90 ? age + 's ago' : Math.round(age / 60) + 'm ago'} · next in ${left}s`;
+    els.meter.style.width = (100 - (left / (REFRESH_MS / 1000)) * 100) + '%';
+  }
+  // one 1s loop drives every countdown + "x ago" label, without re-rendering the cards
+  function tickClocks() {
+    document.querySelectorAll('.expiry[data-exp]').forEach((el) => {
+      const ms = new Date(el.dataset.exp) - Date.now(), c = countdown(ms);
+      el.querySelector('.cd').textContent = c.text;
+      const want = 'expiry ' + c.cls;
+      if (el.className !== want) el.className = want;
+    });
+    document.querySelectorAll('.ago[data-t]').forEach((el) => { el.textContent = ago(el.dataset.t); });
+  }
+  setInterval(() => {
+    if (document.hidden) return;
+    tick(); tickClocks();
+    if (Date.now() >= nextAt) load();
+    if (socketState !== 'live' && Date.now() >= nextTradesAt) loadTrades();
+  }, 1000);
+  // refresh the minute-scale bits (progress bars, stats, closing buckets) without touching scroll/focus
+  setInterval(() => { if (!document.hidden && markets.length) render(); }, 5 * 60_000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tickClocks(); if (Date.now() >= nextAt - 5000) load(); loadTrades(); } });
+
+  /* ---------- wiring ---------- */
+  let qt; els.q.addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(() => render(), 120); });
+  for (const e of [els.team, els.creator, els.sort, els.traded]) e.addEventListener('change', () => render());
+  els.feedPin.addEventListener('change', () => renderFeed());
+  els.catChips.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    category = b.dataset.c; renderCatChips(); render();
+  });
+  els.chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    closeWindow = b.dataset.w;
+    els.chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+    render();
+  });
+  els.cal.addEventListener('mouseover', (e) => { const b = e.target.closest('.dc.has'); if (b) showDay(calDays.get(b.dataset.k), b.dataset.k === dayFilter); });
+  els.cal.addEventListener('focusin', (e) => { const b = e.target.closest('.dc.has'); if (b) showDay(calDays.get(b.dataset.k), b.dataset.k === dayFilter); });
+  els.cal.addEventListener('mouseleave', resetCalInfo);
+  els.cal.addEventListener('click', (e) => {
+    const b = e.target.closest('.dc.has'); if (!b) return;
+    dayFilter = dayFilter === b.dataset.k ? '' : b.dataset.k;
+    render();
+    if (dayFilter) $('out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  calScroll.addEventListener('scroll', navState, { passive: true });
+  $('calPrev').addEventListener('click', () => calScroll.scrollBy({ left: -(calScroll.clientWidth - 40), behavior: 'smooth' }));
+  $('calNext').addEventListener('click', () => calScroll.scrollBy({ left: calScroll.clientWidth - 40, behavior: 'smooth' }));
+  els.clearAll.addEventListener('click', clearAll);
+  const toggle = (btn, panel, then, onChange) => btn.addEventListener('click', () => {
+    const open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+    if (open && then) then();
+    if (onChange) onChange(open);
+  });
+  toggle(els.filtersBtn, els.filtersPanel);
+  // call-out: nudge people toward the calendar whenever it's closed; hide it while it's open
+  const setCalHint = (calendarOpen) => { els.calBtn.classList.toggle('attn', !calendarOpen); $('calHint').hidden = calendarOpen; };
+  setCalHint(false);
+  toggle(els.calBtn, els.calPanel, null, (open) => { if (open) navState(); setCalHint(open); });
+  els.out.addEventListener('click', (e) => { if (e.target.closest('[data-clear]')) clearAll(); });
+  els.resultNote.addEventListener('click', (e) => { if (e.target.closest('button')) clearAll(); });
+  els.refresh.addEventListener('click', () => { load(true); loadTrades(); });
+  if (REFERRAL_CODE) {
+    const link = withRef(`${XO}/`);
+    $('refer').hidden = false; $('referCta').href = link; $('referCode').textContent = REFERRAL_CODE;
+    $('referCopy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); toast('Referral link copied'); } catch { toast(link); }
+    });
+  }
+  setFeedStatus();
+  load();
+  loadTrades();
+  startSocket();
+})();
+</script>
+</body>
+</html>
